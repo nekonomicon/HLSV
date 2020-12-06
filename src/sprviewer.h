@@ -131,7 +131,8 @@ public:
 
 
 extern SPRViewer *g_SPRViewer;
-extern char g_appTitle[];
+extern const char *g_org;
+extern const char *g_appTitle;
 
 
 #endif // INCLUDED_SPRVIEWER

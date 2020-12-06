@@ -21,7 +21,7 @@
 
 
 #ifndef INCLUDED_MXWINDOW
-#include <mxWindow.h>
+#include <mx/mxWindow.h>
 #endif
 
 

@@ -21,7 +21,7 @@
 
 
 #ifndef INCLUDED_MXGLWINDOW
-#include <mxGlWindow.h>
+#include <mx/mxGlWindow.h>
 #endif
 
 #ifndef INCLUDED_SPRVIEWER
@@ -32,7 +32,7 @@
 #include "ViewerSettings.h"
 #endif
 
-#include "matrix.h"
+#include "mathlib.h"
 
 enum // texture names
 {

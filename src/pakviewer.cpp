@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mx.h>
+#include <mx/mx.h>
 #include "pakviewer.h"
 #include "GlWindow.h"
 #include "sprviewer.h"
@@ -172,7 +172,7 @@ PAKViewer::handleEvent (mxEvent *event)
 				OnPAKViewer ();
 				char e[16];
 
-				strncpy (e, mx_getextension (d_currLumpName), 16);
+				strncpy (e, mx_getextension (d_currLumpName), sizeof(e) - 1);
 				int mode = g_FileAssociation->getMode (&e[1]);
 				if (mode == -1)
 					return 1;
@@ -371,7 +371,7 @@ PAKViewer::OnPlaySound ()
 int
 PAKViewer::OnExtract ()
 {
-	char *ptr = (char *) mxGetSaveFileName (this, "", "*.*");
+	char *ptr = (char *) mxGetSaveFileName (this, "", "All Files (*.*)");
 	if (ptr)
 	{
 		if (!pak_ExtractFile (d_pakFile, d_currLumpName, ptr))

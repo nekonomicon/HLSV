@@ -34,6 +34,13 @@ typedef vec_t vec4_t[4];	// x,y,z,w
 
 #define	Q_PI	3.14159265358979323846
 
+#ifndef Q_min
+#define Q_min(a,b)  (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef Q_max
+#define Q_max(a,b)  (((a) > (b)) ? (a) : (b))
+#endif
+
 extern vec3_t vec3_origin;
 
 // Use this definition globally
@@ -81,6 +88,7 @@ void AngleQuaternion( const vec3_t angles, vec4_t quaternion );
 void QuaternionMatrix( const vec4_t quaternion, float (*matrix)[4] );
 void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt );
 
+void Matrix4x4Init(const vec3_t origin, const vec3_t angles, float scale, float (*matrix)[4]);
 
 #ifdef __cplusplus
 }

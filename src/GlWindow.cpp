@@ -15,17 +15,17 @@
 // email:          mete@swissquake.ch
 // web:            http://www.swissquake.ch/chumbalum-soft/
 //
-#include <mx.h>
-#include <mxMessageBox.h>
-#include <mxTga.h>
-#include <mxPcx.h>
-#include <mxBmp.h>
-#include <gl.h>
+#include <mx/mx.h>
+#include <mx/mxMessageBox.h>
+#include <mx/mxTga.h>
+#include <mx/mxPcx.h>
+#include <mx/mxBmp.h>
+#include <mx/gl.h>
 #include <GL/glu.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include <stringlib.h>
 #include "ViewerSettings.h"
 #include "GlWindow.h"
 #include "SpriteModel.h"
@@ -83,8 +83,11 @@ int GlWindow::handleEvent (mxEvent *event)
 		oldx = event->x;
 		oldy = event->y;
 
+#ifdef _WIN32
 		// HACKHACK: reset focus to main window to catch hot-keys again
-		if( g_SPRViewer ) SetFocus( (HWND) g_SPRViewer->getHandle ());
+		if( g_SPRViewer )
+			SetFocus( (HWND) g_SPRViewer->getHandle ());
+#endif
 		g_viewerSettings.pause = true;
 
 		break;
@@ -119,7 +122,7 @@ int GlWindow::handleEvent (mxEvent *event)
 		// clamp to 100fps
 		if( dt >= 0.0 && dt < 0.01 )
 		{
-			Sleep( max( 10 - dt * 1000.0, 0 ) );
+			mx::sleep( Q_max( 10 - dt * 1000.0, 0 ) );
 			return 1;
 		}
 #endif
@@ -208,9 +211,9 @@ void GlWindow :: drawFloor( int texture )
 
 	if( texture ) 
 	{
-		static Vector tMap( 0, 0, 0 );
-		static Vector dxMap( 1, 0, 0 );
-		static Vector dyMap( 0, 1, 0 );
+		static vec3_t tMap = { 0, 0, 0 };
+		static vec3_t dxMap = { 1, 0, 0 };
+		static vec3_t dyMap = { 0, 1, 0 };
 
 		vec3_t deltaPos;
 
@@ -374,15 +377,16 @@ int GlWindow :: loadSprite( const char *filename, bool centering )
 	g_spriteModel.FreeSprite ();
 	if( g_spriteModel.LoadSprite( filename ))
 	{
-		char str[256], basename[64];
+		char str[256];
+		const char *basename;
 
 		if( centering )
 			g_spriteModel.centerView (false);
 		g_viewerSettings.speedScale = 1.0f;
 		mx_setcwd( mx_getpath( filename ));
 
-		COM_FileBase( filename, basename );
-		Q_snprintf( str, sizeof( str ), "%s - %s.spr", g_appTitle, basename );
+		basename = mx_getfilebase( filename );
+		mx_snprintf( str, sizeof( str ), "%s - %s.spr", g_appTitle, basename );
 		g_SPRViewer->setLabel( str );
 
 		ListDirectory();
@@ -416,7 +420,7 @@ int GlWindow :: loadTextureImage( mxImage *image, int name )
 			const char *extensions = (const char *)glGetString( GL_EXTENSIONS );
 
 			// check for anisotropy support
-			if( Q_strstr( extensions, "GL_EXT_texture_filter_anisotropic" ))
+			if( strstr( extensions, "GL_EXT_texture_filter_anisotropic" ))
 			{
 				float	anisotropy = 1.0f;
 				glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy );
@@ -436,7 +440,7 @@ int GlWindow :: loadTextureImage( mxImage *image, int name )
 			const char *extensions = (const char *)glGetString( GL_EXTENSIONS );
 
 			// check for anisotropy support
-			if( Q_strstr( extensions, "GL_EXT_texture_filter_anisotropic" ))
+			if( strstr( extensions, "GL_EXT_texture_filter_anisotropic" ))
 			{
 				float	anisotropy = 1.0f;
 				glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy );
@@ -454,7 +458,7 @@ int GlWindow :: loadTextureImage( mxImage *image, int name )
 
 int GlWindow :: loadTexture( const char *filename, int name )
 {
-	if( !filename || !Q_strlen( filename ))
+	if( !filename || !*filename )
 	{
 		if( d_textureNames[name] )
 		{

@@ -356,4 +356,105 @@ void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
 	}
 }
 
+void Matrix4x4Init(const vec3_t origin, const vec3_t angles, float scale, float (*matrix)[4])
+{
+	float	angle, sr, sp, sy, cr, cp, cy;
 
+        if( angles[2] )
+	{
+		angle = angles[1] * (Q_PI*2 / 360);
+		sy = sin(angle);
+		cy = cos(angle);
+		angle = angles[0] * (Q_PI*2 / 360);
+		sp = sin(angle);
+		cp = cos(angle);
+		angle = angles[2] * (Q_PI*2 / 360);
+		sr = sin(angle);
+		cr = cos(angle);
+
+		matrix[0][0] = (cp*cy) * scale;
+		matrix[1][0] = (sr*sp*cy+cr*-sy) * scale;
+		matrix[2][0] = (cr*sp*cy+-sr*-sy) * scale;
+		matrix[3][0] = origin[0];
+		matrix[0][1] = (cp*sy) * scale;
+		matrix[1][1] = (sr*sp*sy+cr*cy) * scale;
+		matrix[2][1] = (cr*sp*sy+-sr*cy) * scale;
+		matrix[3][1] = origin[1];
+		matrix[0][2] = (-sp) * scale;
+		matrix[1][2] = (sr*cp) * scale;
+		matrix[2][2] = (cr*cp) * scale;
+		matrix[3][2] = origin[2];
+		matrix[0][3] = 0;
+		matrix[1][3] = 0;
+		matrix[2][3] = 0;
+		matrix[3][3] = 1;
+	}
+	else if( angles[0] )
+	{
+		angle = angles[1] * (Q_PI*2 / 360);
+		sy = sin(angle);
+		cy = cos(angle);
+		angle = angles[0] * (Q_PI*2 / 360);
+		sp = sin(angle);
+		cp = cos(angle);
+
+		matrix[0][0] = (cp*cy) * scale;
+		matrix[1][0] = (-sy) * scale;
+		matrix[2][0] = (sp*cy) * scale;
+		matrix[3][0] = origin[0];
+		matrix[0][1] = (cp*sy) * scale;
+		matrix[1][1] = (cy) * scale;
+		matrix[2][1] = (sp*sy) * scale;
+		matrix[3][1] = origin[1];
+		matrix[0][2] = (-sp) * scale;
+		matrix[1][2] = 0;
+		matrix[2][2] = (cp) * scale;
+		matrix[3][2] = origin[2];
+		matrix[0][3] = 0;
+		matrix[1][3] = 0;
+		matrix[2][3] = 0;
+		matrix[3][3] = 1;
+	}
+	else if( angles[1] )
+	{
+		angle = angles[1] * (Q_PI*2 / 360);
+		sy = sin(angle);
+		cy = cos(angle);
+
+		matrix[0][0] = (cy) * scale;
+		matrix[1][0] = (-sy) * scale;
+		matrix[2][0] = 0;
+		matrix[3][0] = origin[0];
+		matrix[0][1] = (sy) * scale;
+		matrix[1][1] = (cy) * scale;
+		matrix[2][1] = 0;
+		matrix[3][1] = origin[1];
+		matrix[0][2] = 0;
+		matrix[1][2] = 0;
+		matrix[2][2] = scale;
+		matrix[3][2] = origin[2];
+		matrix[0][3] = 0;
+		matrix[1][3] = 0;
+		matrix[2][3] = 0;
+		matrix[3][3] = 1;
+	}
+	else
+	{
+		matrix[0][0] = scale;
+		matrix[1][0] = 0;
+		matrix[2][0] = 0;
+		matrix[3][0] = origin[0];
+		matrix[0][1] = 0;
+		matrix[1][1] = scale;
+		matrix[2][1] = 0;
+		matrix[3][1] = origin[1];
+		matrix[0][2] = 0;
+		matrix[1][2] = 0;
+		matrix[2][2] = scale;
+		matrix[3][2] = origin[2];
+		matrix[0][3] = 0;
+		matrix[1][3] = 0;
+		matrix[2][3] = 0;
+		matrix[3][3] = 1;
+	}
+}

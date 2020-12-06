@@ -43,10 +43,10 @@ endif
 LIBS += $(MXTK_LIB)
 
 ifneq (, $(findstring mingw, $(SYS)))
-LIBS += -lcomctl32 -lcomdlg32 -lgdi32 -lopengl32 -lwinmm -static-libgcc -static-libstdc++
+LIBS += -lshlwapi -lcomctl32 -lcomdlg32 -lgdi32 -lopengl32 -lglu32 -lwinmm -static-libgcc -static-libstdc++
 else
 CFLAGS += -fPIC
-LIBS += $(shell pkg-config --libs Qt5OpenGL gl)
+LIBS += $(shell pkg-config --libs Qt5OpenGL gl glu)
 INCLUDE += $(shell pkg-config --cflags Qt5OpenGL gl)
 endif
 

@@ -14,14 +14,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <gl.h>
+#include <mx/gl.h>
 #include <GL/glu.h>
 #include "SpriteModel.h"
-#include "GLWindow.h"
+#include "GlWindow.h"
 #include "ViewerSettings.h"
-#include "stringlib.h" 
 
-#include <mx.h>
+#include <mx/mx.h>
 #include "sprviewer.h"
 
 vec3_t		g_lightcolor;
@@ -38,7 +37,7 @@ void SpriteModel :: centerView( bool reset )
 	float dx = max[0] - min[0];
 	float dy = max[1] - min[1];
 	float dz = max[2] - min[2];
-	float d = max( dx, max( dy, dz ));
+	float d = Q_max( dx, Q_max( dy, dz ));
 
 	if( reset )
 	{
@@ -57,7 +56,7 @@ void SpriteModel :: centerView( bool reset )
 	g_viewerSettings.rot[1] = -90.0f;
 	g_viewerSettings.rot[2] = 0.0f;
 
-	g_viewerSettings.movementScale = max( 1.0f, d * 0.01f );
+	g_viewerSettings.movementScale = Q_max( 1.0f, d * 0.01f );
 	m_yaw = 90.0;
 }
 
@@ -305,26 +304,26 @@ float SpriteModel :: GetSpriteFrameInterpolant( int frame, mspriteframe_t **oldf
 DrawSpriteQuad
 =================
 */
-void SpriteModel :: DrawQuad( mspriteframe_t *frame, const vec3_t &org, const vec3_t &v_right, const vec3_t &v_up, float scale )
+void SpriteModel :: DrawQuad( mspriteframe_t *frame, vec3_t org, vec3_t v_right, vec3_t v_up, float scale )
 {
 	vec3_t	point;
 
 	glBegin( GL_QUADS );
 		glTexCoord2f( 0.0f, 1.0f );
-		point = org + v_up * (frame->down * scale);
-		point = point + v_right * (frame->left * scale);
+		VectorMA( org, frame->down * scale, v_up, point );
+		VectorMA( point, frame->left * scale, v_right, point );
 		glVertex3fv( point );
 		glTexCoord2f( 0.0f, 0.0f );
-		point = org + v_up * (frame->up * scale);
-		point = point + v_right * (frame->left * scale);
+		VectorMA( org, frame->up * scale, v_up, point );
+		VectorMA( point, frame->left * scale, v_right, point );
 		glVertex3fv( point );
 		glTexCoord2f( 1.0f, 0.0f );
-		point = org + v_up * (frame->up * scale);
-		point = point + v_right * (frame->right * scale);
+		VectorMA( org, frame->up * scale, v_up, point );
+		VectorMA( point, frame->right * scale, v_right, point );
 		glVertex3fv( point );
- 	        	glTexCoord2f( 1.0f, 1.0f );
-		point = org + v_up * (frame->down * scale);
-		point = point + v_right * (frame->right * scale);
+		glTexCoord2f( 1.0f, 1.0f );
+		VectorMA( org, frame->down * scale, v_up, point );
+		VectorMA( point, frame->right * scale, v_right, point );
 		glVertex3fv( point );
 	glEnd();
 }
@@ -350,15 +349,15 @@ bool SpriteModel :: AllowLerping( void )
 
 void SpriteModel :: SetupTransform( void )
 {
-	vec3_t	angles( 0.0f, 0.0f, 0.0f );
-	vec3_t	origin( 0.0f, 0.0f, 0.0f );
+	vec3_t	angles = {0.0f,};
+	vec3_t	origin = {0.0f,};
 
-	m_protationmatrix = matrix4x4( origin, angles, 1.0f );
+	Matrix4x4Init( origin, angles, 1.0f, m_protationmatrix );
 
 	angles[0] = 270.0f - g_viewerSettings.rot[0];
 	angles[1] = 270.0f - g_viewerSettings.rot[1];
-	origin = g_viewerSettings.trans;
-	m_viewVectors = matrix4x4( origin, angles, 1.0f );
+	VectorCopy( g_viewerSettings.trans, origin );
+	Matrix4x4Init( origin, angles, 1.0f, m_viewVectors );
 }
 
 /*
@@ -375,7 +374,7 @@ void SpriteModel :: DrawSprite( void )
 	float		angle, dot, sr, cr;
 	float		lerp = 1.0f, ilerp;
 	vec3_t		v_right, v_up;
-	vec3_t		origin, color;
+	vec3_t		origin = {0.0f,}, color = {1.0f, 1.0f, 1.0f}; // all sprites can have color
 	float		blend = 1.0f;
 	msprite_t		*psprite;
 	int		i, type;
@@ -385,10 +384,7 @@ void SpriteModel :: DrawSprite( void )
 	SetupTransform();
 
 	psprite = (msprite_t * )m_pspritehdr;
-	origin = g_vecZero; // set render origin
 
-	// all sprites can have color
-	color = Vector( 1.0f, 1.0f, 1.0f );
 	glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 
 	if( g_viewerSettings.renderMode == SPR_ADDITIVE )
@@ -410,20 +406,27 @@ void SpriteModel :: DrawSprite( void )
 	switch( g_viewerSettings.orientType )
 	{
 	case SPR_ORIENTED:
-		v_right = m_protationmatrix[1];
-		v_up = m_protationmatrix[2];
+		VectorCopy(m_protationmatrix[1], v_right);
+		VectorCopy(m_protationmatrix[2], v_up);
 		break;
 	case SPR_FACING_UPRIGHT:
 	case SPR_FWD_PARALLEL_UPRIGHT:
 		dot = m_viewVectors[0][2];
 		if(( dot > 0.999848f ) || ( dot < -0.999848f ))	// cos(1 degree) = 0.999848
 			return; // invisible
-		v_up = Vector( 0.0f, 0.0f, 1.0f );
-		v_right = Vector( -m_viewVectors[0][1], m_viewVectors[0][0], 0.0f ).Normalize();
+		v_up[0] = 0.0f;
+		v_up[1] = 0.0f;
+		v_up[2] = 1.0f;
+
+		v_right[0] = -m_viewVectors[0][1];
+		v_right[1] = m_viewVectors[0][0];
+		v_right[2] = 0.0f;
+		VectorNormalize(v_right);
 		break;
 	case SPR_FWD_PARALLEL_ORIENTED:
-		angle = 0.0f * (M_PI2 / 360.0f);
-		SinCos( angle, &sr, &cr );
+		angle = 0.0f * (Q_PI / 360.0f);
+		sr = sin( angle );
+		cr = cos( angle );
 		for( i = 0; i < 3; i++ )
 		{
 			v_right[i] = (m_viewVectors[1][i] * cr + m_viewVectors[2][i] * sr);
@@ -432,8 +435,8 @@ void SpriteModel :: DrawSprite( void )
 		break;
 	case SPR_FWD_PARALLEL: // normal sprite
 	default:
-		v_right = m_viewVectors[1]; 
-		v_up = m_viewVectors[2];
+		VectorCopy(m_viewVectors[1], v_right);
+		VectorCopy(m_viewVectors[2], v_up); 
 		break;
 	}
 
@@ -450,7 +453,7 @@ void SpriteModel :: DrawSprite( void )
 	else
 	{
 		// draw two combined lerped frames
-		lerp = bound( 0.0f, lerp, 1.0f );
+		lerp = Q_max(0.0f, Q_min( lerp, 1.0 ));
 		ilerp = 1.0f - lerp;
 
 		if( ilerp != 0.0f )
@@ -477,3 +480,4 @@ void SpriteModel :: DrawSprite( void )
 	glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE );
 	glEnable( GL_DEPTH_TEST );
 }
+

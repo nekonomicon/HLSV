@@ -16,20 +16,22 @@
 // web:            http://www.swissquake.ch/chumbalum-soft/
 //
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 //#include <ostream.h>
-#include <mx.h>
-#include <gl.h>
-#include <mxBmp.h>
+#include <mx/mx.h>
+#include <mx/gl.h>
+#include <mx/mxBmp.h>
 #include "sprviewer.h"
 #include "GlWindow.h"
 #include "pakviewer.h"
 #include "FileAssociation.h"
-#include "stringlib.h"
 #include "SpriteModel.h"
+#include <mx/mxSettings.h>
 
 SPRViewer *g_SPRViewer = 0;
-char g_appTitle[] = "Half_life Sprite Viewer v0.1 beta";
+const char *g_org = "Flying With Gauss";
+const char *g_appTitle = "Half-life Sprite Viewer v0.1 beta";
 static char recentFiles[8][256] = { "", "", "", "", "", "", "", "" };
 extern bool bUseWeaponOrigin;
 bool g_bStopPlaying = false;
@@ -58,9 +60,8 @@ void SPRViewer::loadRecentFiles( void )
 
 	for( int i = 0; i < 8; i++ )
 	{
-		mx_snprintf( str, sizeof( str ), "RecentFile%i", i );
-		if( !LoadString( str, recentFiles[i] ))
-			break;
+		sprintf( str, "RecentFile%i", i );
+		mx_get_usersettings_string( str, recentFiles[i] );
 	}
 }
 
@@ -68,14 +69,13 @@ void SPRViewer::saveRecentFiles( void )
 {
 	char	str[256];
 
-	if( !InitRegistry( ))
+	if( !mx_create_usersettings () )
 		return;
 
 	for( int i = 0; i < 8; i++ )
 	{
-		mx_snprintf( str, sizeof( str ), "RecentFile%i", i );
-		if( !SaveString( str, recentFiles[i] ))
-			break;
+		sprintf( str, "RecentFile%i", i );
+		mx_set_usersettings_string( str, recentFiles[i] );
 	}
 }
 
@@ -130,11 +130,9 @@ SPRViewer :: SPRViewer() : mxWindow( 0, 0, 0, 0, 0, g_appTitle, mxWindow::Normal
 	menuOptions->addSeparator ();
 	menuOptions->add ("Center View", IDC_OPTIONS_CENTERVIEW);
 	menuOptions->add ("Reset View", IDC_OPTIONS_RESETVIEW);
-#ifdef WIN32
 	menuOptions->addSeparator ();
 	menuOptions->add ("Make Screenshot...", IDC_OPTIONS_MAKESCREENSHOT);
 	//menuOptions->add ("Dump Sprite Info", IDC_OPTIONS_DUMP);
-#endif
 	menuView->add ("File Associations...", IDC_VIEW_FILEASSOCIATIONS);
 
 #ifdef WIN32
@@ -224,7 +222,7 @@ SPRViewer :: SPRViewer() : mxWindow( 0, 0, 0, 0, 0, g_appTitle, mxWindow::Normal
 
 SPRViewer::~SPRViewer ()
 {
-	g_viewerSettings.showMaximized = isMaximized();
+	// g_viewerSettings.showMaximized = isMaximized();
 	saveRecentFiles ();
 	SaveViewerSettings ();
 }
@@ -277,15 +275,15 @@ SPRViewer::handleEvent (mxEvent *event)
 			if( g_viewerSettings.numSpritePathes > 0 )
 				loadSprite( LoadNextSprite( ));
 			break;
-		case VK_F5:
+		/*case VK_F5:
 		{
 			bool oldUseWeaponOrigin = bUseWeaponOrigin;
 			loadSprite( g_viewerSettings.spriteFile, false );
 			bUseWeaponOrigin = oldUseWeaponOrigin;
 			break;
-		}
+		}*/
 		case 'v':
-		case 'ì':
+		case ' ':
 			bUseWeaponOrigin = !mb->isChecked( IDC_OPTIONS_WEAPONORIGIN );
 			mb->setChecked( IDC_OPTIONS_WEAPONORIGIN, bUseWeaponOrigin );
 			break;
@@ -297,7 +295,7 @@ SPRViewer::handleEvent (mxEvent *event)
 	{
 		case IDC_FILE_LOADMODEL:
 		{
-			const char *ptr = mxGetOpenFileName (this, 0, "*.spr");
+			const char *ptr = mxGetOpenFileName (this, 0, "PC Half-Life Sprites (*.spr)");
 			if (ptr)
 			{
 				if (!loadSprite (ptr ))
@@ -351,7 +349,8 @@ SPRViewer::handleEvent (mxEvent *event)
 		break;
 		case IDC_FILE_SAVEMODEL:
 		{
-			char *ptr = (char *) mxGetSaveFileName (this, g_viewerSettings.spritePath, "*.spr", g_viewerSettings.spritePath);
+			char *ptr = (char *) mxGetSaveFileName (this, g_viewerSettings.spritePath, "PC Half-Life Sprites (*.spr)");
+
 			if (!ptr)
 				break;
 
@@ -377,7 +376,7 @@ SPRViewer::handleEvent (mxEvent *event)
 		case IDC_FILE_LOADBACKGROUNDTEX:
 		case IDC_FILE_LOADGROUNDTEX:
 		{
-			const char *ptr = mxGetOpenFileName (this, 0, "*.bmp;*.tga;*.pcx");
+			const char *ptr = mxGetOpenFileName (this, 0, "Windows Bitmap (*.bmp);;TARGA Image Files (*.tga);;PCExchange Image Files (*.pcx)");
 			if (ptr)
 			{
 				int name = TEXTURE_UNUSED;
@@ -409,7 +408,7 @@ SPRViewer::handleEvent (mxEvent *event)
 		break;
 		case IDC_FILE_OPENPAKFILE:
 		{
-			const char *ptr = mxGetOpenFileName (this, "\\Quake\\id1\\", "*.pak");
+			const char *ptr = mxGetOpenFileName (this, "\\Quake\\id1\\", "PAK Files (*.pak)");
 			if (ptr)
 			{
 				int i;
@@ -524,19 +523,17 @@ SPRViewer::handleEvent (mxEvent *event)
 			}
 		}
 		break;
-#ifdef WIN32
 		case IDC_OPTIONS_MAKESCREENSHOT:
 		{
-			char *ptr = (char *)mxGetSaveFileName (this, 0, "*.bmp");
+			char *ptr = (char *)mxGetSaveFileName (this, 0, "Windows Bitmap (*.bmp)");
 			if (ptr)
 			{
-				if( !strstr( ptr, ".bmp" ))
+				if( !mx_stristr( ptr, ".bmp" ))
 					strcat( ptr, ".bmp" );
 				makeScreenShot (ptr);
 			}
 		}
 		break;
-#endif
 		case IDC_OPTIONS_WEAPONORIGIN:
 			bUseWeaponOrigin = !mb->isChecked( IDC_OPTIONS_WEAPONORIGIN );
 			mb->setChecked( IDC_OPTIONS_WEAPONORIGIN, bUseWeaponOrigin );
@@ -626,10 +623,15 @@ SPRViewer::handleEvent (mxEvent *event)
 		{
 			if( !g_bStopPlaying )
 			{
+				char szValue[64];
+
 				tbStop->setLabel ("Play");
 				g_bStopPlaying = true;
 				g_nCurrFrame = g_spriteModel.setFrame( -1 );
-				leFrame->setLabel ("%d", g_nCurrFrame);
+
+				sprintf(szValue, "%d", g_nCurrFrame);
+
+				leFrame->setLabel (szValue);
 				bPrevFrame->setEnabled (true);
 				leFrame->setEnabled (true);
 				bNextFrame->setEnabled (true);
@@ -650,8 +652,13 @@ SPRViewer::handleEvent (mxEvent *event)
 
 		case IDC_PREVFRAME:
 		{
+			char szValue[64];
+
 			g_nCurrFrame = g_spriteModel.setFrame( g_nCurrFrame - 1 );
-			leFrame->setLabel ("%d", g_nCurrFrame);
+
+			sprintf(szValue, "%d", g_nCurrFrame);
+
+			leFrame->setLabel (szValue);
 			g_bEndOfSequence = false;
 		}
 		break;
@@ -666,8 +673,13 @@ SPRViewer::handleEvent (mxEvent *event)
 
 		case IDC_NEXTFRAME:
 		{
+			char szValue[64];
+
 			g_nCurrFrame = g_spriteModel.setFrame( g_nCurrFrame + 1 );
-			leFrame->setLabel( "%d", g_nCurrFrame );
+
+			sprintf(szValue, "%d", g_nCurrFrame);
+
+			leFrame->setLabel(szValue);
 			g_bEndOfSequence = false;
 		}
 		break;
@@ -688,7 +700,6 @@ void SPRViewer :: redraw( void )
 
 void SPRViewer :: makeScreenShot( const char *filename )
 {
-#ifdef WIN32
 	d_GlWindow->redraw ();
 	int w = d_GlWindow->w2 ();
 	int h = d_GlWindow->h2 ();
@@ -706,7 +717,6 @@ void SPRViewer :: makeScreenShot( const char *filename )
 
 		delete image;
 	}
-#endif
 }
 
 int SPRViewer::getTableIndex()
@@ -813,10 +823,10 @@ int main( int argc, char *argv[] )
 	g_SPRViewer->setBounds (20, 20, 640, 540);
 	g_SPRViewer->setVisible (true);
 
-	if( g_viewerSettings.showMaximized )
-		g_SPRViewer->Maximize();
+	// if( g_viewerSettings.showMaximized )
+		// g_SPRViewer->Maximize();
 
-	if (Q_stristr (cmdline, ".spr"))
+	if (mx_stristr (cmdline, ".spr"))
 	{
 		g_SPRViewer->loadSprite (cmdline);
 	}
@@ -827,3 +837,4 @@ int main( int argc, char *argv[] )
 
 	return ret;
 }
+

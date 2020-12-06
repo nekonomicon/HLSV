@@ -14,14 +14,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <gl.h>
+#include <mx/gl.h>
 #include <GL/glu.h>
 #include "SpriteModel.h"
-#include "GLWindow.h"
+#include "GlWindow.h"
 #include "ViewerSettings.h"
-#include "stringlib.h" 
 
-#include <mx.h>
+#include <mx/mx.h>
 #include "sprviewer.h"
 
 SpriteModel g_spriteModel;
@@ -167,7 +166,7 @@ void SpriteModel :: UploadTexture( byte *data, int width, int height, byte *srcp
 	const char *extensions = (const char *)glGetString( GL_EXTENSIONS );
 
 	// check for anisotropy support
-	if( Q_strstr( extensions, "GL_EXT_texture_filter_anisotropic" ))
+	if( strstr( extensions, "GL_EXT_texture_filter_anisotropic" ))
 	{
 		float	anisotropy = 1.0f;
 		glGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy );
@@ -421,8 +420,8 @@ msprite_t *SpriteModel :: LoadSprite( const char *spritename )
 		return 0;
 	}
 
-	Q_strncpy (g_viewerSettings.spriteFile, spritename, sizeof( g_viewerSettings.spriteFile ));
-	Q_strncpy( g_viewerSettings.spritePath, spritename, sizeof( g_viewerSettings.spritePath ));
+	strncpy( g_viewerSettings.spriteFile, spritename, sizeof( g_viewerSettings.spriteFile ) - 1 );
+	strncpy( g_viewerSettings.spritePath, spritename, sizeof( g_viewerSettings.spritePath ) - 1 );
 
 	for( i = 0; i < m_pspritehdr->numframes; i++ )
 	{
@@ -444,11 +443,11 @@ msprite_t *SpriteModel :: LoadSprite( const char *spritename )
 		if( pframetype == NULL ) break; // technically an error
 	}
 
-	char	basename[64];
+	const char	*basename;
 
-	COM_FileBase( spritename, basename );
+	basename = mx_getfilebase( spritename );
 
-	if( !Q_strnicmp( basename, "v_", 2 ))
+	if( !mx_strncasecmp( basename, "v_", 2 ))
 	{
 		g_SPRViewer->checkboxSet( IDC_OPTIONS_WEAPONORIGIN, true );
 		bUseWeaponOrigin = true;
@@ -477,7 +476,7 @@ void SpriteModel :: FreeSprite( void )
 	{
 		if( !mxMessageBox( g_GlWindow, "Sprite has changes. Do you wish to save them?", g_appTitle, MX_MB_YESNO | MX_MB_QUESTION ))
 		{
-			char *ptr = (char *)mxGetSaveFileName( g_GlWindow , g_viewerSettings.spritePath, "*.spr", g_viewerSettings.spritePath );
+			char *ptr = (char *)mxGetSaveFileName( g_GlWindow, g_viewerSettings.spritePath, "PC Half-Life Sprites (*.spr)" );
 			if( ptr )
 			{
 				char filename[256];
@@ -550,20 +549,27 @@ bool SpriteModel :: SaveSprite( const char *spritename )
 	return true;
 }
 
-void SpriteModel :: ExtractBbox( vec3_t &mins, vec3_t &maxs )
+void SpriteModel :: ExtractBbox( vec3_t mins, vec3_t maxs )
 {
 	if( !m_pspritehdr )
 	{
-		mins = g_vecZero;
-		maxs = g_vecZero;
+		mins[0] = 0.0f;
+		mins[1] = 0.0f;
+		mins[2] = 0.0f;
+
+		maxs[0] = 0.0f;
+		maxs[1] = 0.0f;
+		maxs[2] = 0.0f;
 		return;
 	}
 
-	mins = m_spritemins;
-	maxs = m_spritemaxs;
+	VectorCopy(m_spritemins, mins);
+	VectorCopy(m_spritemaxs, maxs);
 }
 
-void SpriteModel:: GetMovement( vec3_t &delta )
+void SpriteModel:: GetMovement( vec3_t delta )
 {
-	delta = g_vecZero;
+	delta[0] = 0.0f;
+	delta[1] = 0.0f;
+	delta[2] = 0.0f;
 }

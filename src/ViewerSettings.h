@@ -18,7 +18,6 @@
 #ifndef INCLUDED_VIEWERSETTINGS
 #define INCLUDED_VIEWERSETTINGS
 
-#include <basetypes.h>
 #include <mathlib.h>
 
 typedef struct
@@ -63,10 +62,6 @@ typedef struct
 } ViewerSettings;
 
 extern ViewerSettings g_viewerSettings;
-
-bool InitRegistry( void );
-bool SaveString( const char *pKey, char *pValue );
-bool LoadString( const char *pKey, char *pValue );
 
 #ifdef __cplusplus
 extern "C" {

@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mx.h>
+#include <mx/mx.h>
 
 
 
@@ -255,7 +255,7 @@ FileAssociation::getMode (char *extension)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		if (!strcmp (d_associations[i].extension, _strlwr (extension)))
+		if (!strcmp (d_associations[i].extension, mx_strlower (extension)))
 			return d_associations[i].association;
 	}
 
@@ -269,7 +269,7 @@ FileAssociation::getProgram (char *extension)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		if (!strcmp (d_associations[i].extension, _strlwr (extension)))
+		if (!strcmp (d_associations[i].extension, mx_strlower (extension)))
 			return d_associations[i].program;
 	}
 

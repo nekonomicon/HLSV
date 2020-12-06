@@ -11,6 +11,14 @@
 #ifndef INCLUDED_SPRITEMODEL
 #define INCLUDED_SPRITEMODEL
 
+
+
+#ifndef byte
+typedef unsigned char byte;
+#endif // byte
+
+
+
 #include "mathlib.h"
 
 /*
@@ -72,8 +80,8 @@ public:
 	void		DrawSprite( void );
 	int		setFrame( int newframe );
 
-	void		ExtractBbox( Vector &mins, Vector &maxs );
-	void		GetMovement( Vector &delta );
+	void		ExtractBbox( vec3_t mins, vec3_t maxs );
+	void		GetMovement( vec3_t delta );
 
 	void		centerView( bool reset );
 	void		updateSprite( void );
@@ -91,8 +99,8 @@ private:
 	float		m_dt;
 	int		m_frame;
 
-	matrix4x4		m_protationmatrix;
-	matrix4x4		m_viewVectors;
+	vec_t		m_protationmatrix[4][4];
+	vec_t		m_viewVectors[4][4];
 
 	// internal data
 	msprite_t		*m_pspritehdr;	// pointer to sourcemodel
@@ -115,7 +123,7 @@ private:
 	float		GetSpriteFrameInterpolant( int frame, mspriteframe_t **old, mspriteframe_t **cur );
 
 	// draw
-	void		DrawQuad( mspriteframe_t *frame, const vec3_t &org, const vec3_t &v_right, const vec3_t &v_up, float scale );
+	void		DrawQuad( mspriteframe_t *frame, vec3_t org, vec3_t v_right, vec3_t v_up, float scale );
 };
 
 extern SpriteModel	g_spriteModel;
